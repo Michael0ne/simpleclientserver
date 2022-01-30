@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.31911.260
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "simpleclientserver", "simpleclientserver\simpleclientserver.vcxproj", "{63DA74D9-0375-4545-BA93-09ABED04CD12}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		client|x64 = client|x64
+		client|x86 = client|x86
+		server|x64 = server|x64
+		server|x86 = server|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.client|x64.ActiveCfg = client-debug|x64
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.client|x64.Build.0 = client-debug|x64
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.client|x86.ActiveCfg = client-debug|Win32
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.client|x86.Build.0 = client-debug|Win32
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.server|x64.ActiveCfg = server-debug|x64
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.server|x64.Build.0 = server-debug|x64
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.server|x86.ActiveCfg = client-debug|Win32
+		{63DA74D9-0375-4545-BA93-09ABED04CD12}.server|x86.Build.0 = client-debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {93A8D49F-4E3D-482E-A98F-4E7ACF85C54F}
+	EndGlobalSection
+EndGlobal
