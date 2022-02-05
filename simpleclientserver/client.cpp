@@ -1,55 +1,64 @@
+#include "common.h"
 #ifdef CLIENT
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-#include <WinSock2.h>
-#include <ws2tcpip.h>
-#include <iphlpapi.h>
-
-#pragma comment(lib, "Ws2_32.lib")
-
-#include <iostream>
-#include <string>
 
 std::string serverPort = "27015";
-std::string serverIp = "";
+std::string serverIp = "127.0.0.1";
 bool verboseOutput = false;
+SOCKET clientSocket = INVALID_SOCKET;
 
-void parseCommandLineArguments(const uint32_t argc, char** argv)
+int32_t parseCommandLineArguments(const uint32_t argc, char** argv)
 {
+    int32_t validArguments = 0;
+
     for (uint32_t i = 0; i < argc; ++i)
     {
         if (strcmp("port", argv[i] + 1) == NULL)
+        {
             serverPort = argv[++i];
+            validArguments++;
+        }
 
         if (strcmp("verbose", argv[i] + 1) == NULL)
             verboseOutput = true;
 
         if (strcmp("ip", argv[i] + 1) == NULL)
+        {
             serverIp = argv[++i];
+            validArguments++;
+        }
     }
+
+    return validArguments;
+}
+
+void printUsage()
+{
+    std::cout << "Command line arguments:" << std::endl;
+    std::cout << "-ip <server ip/hostname> - to specify server IP address OR host name." << std::endl;
+    std::cout << "-port <port> - to specify server port." << std::endl;
+    std::cout << "-verbose - to enable verbose output." << std::endl;
 }
 
 int main(int argc, char** argv)
 {
-    if (argc == 1)
-    {
-        std::cout << "Command line arguments:" << std::endl;
-        std::cout << "-ip <server ip/hostname> - to specify server IP address OR host name." << std::endl;
-        std::cout << "-port <port> - to specify server port." << std::endl;
-        std::cout << "-verbose - to enable verbose output." << std::endl;
-
-        return 1;
-    }
-
     if (argc > 1)
-        parseCommandLineArguments(argc - 1, argv + 1);
+    {
+        if (!parseCommandLineArguments(argc - 1, argv + 1))
+        {
+            printUsage();
+            return 1;
+        }
+    }
+    else
+    {
+        printUsage();
+        std::cout << "Starting with default parameters, since no arguments were specified." << std::endl;
+    }
 
     //  Client application.
     WSADATA wsaData;
     int32_t wsaInitResult;
     addrinfo* resultAddressInfo = nullptr, hintsAddressInfo;
-    SOCKET clientSocket = INVALID_SOCKET;
 
     wsaInitResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsaInitResult != NULL)
@@ -118,21 +127,62 @@ int main(int argc, char** argv)
     if (verboseOutput)
         std::cout << "Hello request was sent!" << std::endl;
 
-    int32_t recievedSize;
-    char recieveBuffer[1024] = {};
+    int32_t sentSize, recievedSize;
+    char sendBuffer[128] = {};
+    char recieveBuffer[128] = {};
+    char* sendBufferPtr = sendBuffer;
+    int32_t lastChar = NULL;
+    bool shouldShutdown = false;
 
     do
     {
-        recievedSize = recv(clientSocket, recieveBuffer, 1024, NULL);
+        if (shouldShutdown)
+            break;
 
-        if (recievedSize > 0)
-            std::cout << "Server says: " << recieveBuffer << std::endl;
+        do
+        {
+            lastChar = getchar();
+            *sendBufferPtr++ = lastChar;
+        } while (lastChar != 10);
+
+        std::cout << "[client]: " << sendBuffer << std::endl;
+
+        sentSize = send(clientSocket, sendBuffer, sizeof(sendBuffer), NULL);
+
+        memset(sendBuffer, NULL, sizeof(sendBuffer));
+        sendBufferPtr = sendBuffer;
+
+        if (sentSize > 0)
+        {
+            if (verboseOutput)
+                std::cout << "Sent " << sentSize << " bytes of data to the server!" << std::endl;
+
+            recievedSize = recv(clientSocket, recieveBuffer, sizeof(recieveBuffer), NULL);
+            if (recievedSize > 0)
+            {
+                std::cout << "[server]: " << recieveBuffer << std::endl;
+            }
+            else
+            {
+                if (recievedSize == NULL)
+                    std::cout << "Connection closed!" << std::endl;
+                else
+                    std::cout << "Failed to recieve server messages! " << WSAGetLastError() << std::endl;
+
+                memset(recieveBuffer, NULL, sizeof(recieveBuffer));
+                shouldShutdown = true;
+            }
+
+            memset(recieveBuffer, NULL, sizeof(recieveBuffer));
+        }
         else
-            if (recievedSize == NULL)
+        {
+            if (sentSize == NULL)
                 std::cout << "Connection closed!" << std::endl;
             else
-                std::cout << "Failed to recieve server messages! " << WSAGetLastError() << std::endl;
-    } while (recievedSize > 0);
+                std::cout << "Failed to send message to the server! " << WSAGetLastError() << std::endl;
+        }
+    } while (sentSize > 0);
 
     //  Shutdown connection.
     int32_t shutdownResult = shutdown(clientSocket, SD_SEND);
